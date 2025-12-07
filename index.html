@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>e-commerce cart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            }
+            .catalog , .cart {
+            margin-bottom: 40px;
+            }
+            .product {
+                margin: 10px 0;
+            }.cart-item {
+                margin: 5px 0;
+            }
+            #cacheNotice {
+                color: red;
+                font-weight: bold;
+                font-size: .9em;
+            }
+    </style>
+</head>
+<body>
+    <h1 id="greeting">Welcome</h1>
+    <!--- Login Section -->
+    <div>
+        <label>Enter your name: </label>
+        <input type="text" id="usernameInput">
+         <button onclick="setUserCookie()">Login</button>
+  </div>
+
+  <!--font preference-->
+    <div>
+        <label for="fontSelect">Choose font:</label>
+        <select id="fontSelect" onchange="setFontPreference()">
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="'Courier New', monospace">Courier New</option>
+        </select>
+    </div>
+
+    <!-- Product Catalog -->
+    <div class="catalog">
+        <h2>Product Catalog</h2>
+        <div class="product">
+            <span> Game Controller - R310</span>
+            <button onclick="addToCart('Game Controller', 310)">Add to Cart</button>
+        </div>
+        <div class="product">
+            <span> Headphones - R520</span>
+            <button onclick="addToCart('Headphones', 520)">Add to Cart</button>
+        </div>
+        <div class="product">
+            <span> Keyboard - R330</span>
+            <button onclick="addToCart('Keyboard', 330)">Add to Cart</button>
+        </div>
+
+        <!-- Shopping Cart -->
+    <div class="cart">
+        <h2>Your Cart</h2>
+        <div id="cartItems">Your cart is empty</div>
+        <p>Total: R<span id="totalPrice">0</span></p>
+        <button onclick="clearCart()">Clear Cart</button>
+        <button onclick="resetPreference()">Reset Preferences</button>
+    </div>
+
+    <!--Cache Notice-->
+    <div id="cacheNotice">Static resources are cached for faster loading</div>
+
+    <script>
+        //------
+        // COOKIES
+        //------
+        function setUserCookie() {
+            const username = document.getElementById('usernameInput').value;
+            if (username) {
+                document.cookie = "username=" + username + ";path=/";
+                greetUser();
+             }
+        }
+
+        function getCookie(name) {
+            const value = "; " + document.cookie;
+            const parts = value.split("; " + name + "=");
+            if (parts.length === 2) return parts.pop().split(";").shift();
+        }
+
+        function greetUser() {
+            const username = getCookie('username');
+            if (username) {
+                document.getElementById('greeting').innerText = "Welcome back, " + username + "!";
+            }
+        }
+
+        //------
+        // SESSION STORAGE (FONT PREFERENCE)
+        //------
+        function setFontPreference() {
+            const font = document.getElementById('fontSelect').value;
+            sessionStorage.setItem('fontPreference', font);
+            document.body.style.fontFamily = font;
+        }
+
+        function applyFontPreference() {
+            const font = sessionStorage.getItem('fontPreference');
+            if (font) {
+                document.body.style.fontFamily = font;
+                document.getElementById('fontSelect').value = font;
+            }
+        }
+
+        function resetPreference() {
+            sessionStorage.removeItem('fontPreference');
+            document.body.style.fontFamily = 'Arial, sans-serif';
+            document.getElementById('fontSelect').value = 'Arial, sans-serif';        
+        }
+
+
+
+        //------
+        // LOCAL STORAGE (CART)
+        //------
+
+        function addToCart(name, price) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const existingItem = cart.find(item => item.name === name);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+            cart.push({ name , price , quantity: 1 });
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+            displayCart();
+        }
+
+        function displayCart() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartItemsDiv = document.getElementById('cartItems');
+            const totalPriceSpan = document.getElementById('totalPrice');
+            
+            if (cart.length === 0) {
+                cartItemsDiv.innerText = "Your cart is empty";
+                totalPriceSpan.innerText = "0";
+                return;
+            }
+            cartItemsDiv.innerHTML = "";
+            let total = 0;
+            cart.forEach(item => {
+            total += item.price * item.quantity;
+            cartItemsDiv.innerHTML += `
+            <div class="cart-item">
+                ${item.name} (x${item.quantity}) - R${item.price * item.quantity}
+                <button onclick="removeFromCart('${item.name}')">Remove</button>
+            </div>`;
+                
+            });
+            totalPriceSpan.innerText = total;                      
+        }
+        
+        function removeFromCart(name){
+            let cart = JSON.parse(localStorage.getItem( "cart" ) ) || [];
+            const itemIndex = cart.findIndex(item => item.name === name);
+
+            if (itemIndex > -1) {
+                if (cart[itemIndex].quantity > 1) {
+                    cart[itemIndex].quantity--;
+                } else {
+                    cart.splice(itemIndex, 1); //Remove item completely
+                }
+                localStorage.setItem("cart" , JSON.stringify(cart));
+                displayCart();                 
+            }
+        }
+
+        function clearCart() {
+            localStorage.removeItem('cart');
+            displayCart();
+        }
+
+        //------
+        // ON PAGE LOAD
+        //------
+        window.onload = function() {
+            greetUser ();
+            applyFontPreference ();
+            displayCart ()
+        };    
+
+    </script>   
+</body>            
+</html>
